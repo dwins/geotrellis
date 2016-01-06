@@ -21,6 +21,33 @@ import com.vividsolutions.jts.geom.TopologyException
 import GeomFactory._
 import geotrellis.proj4.CRS
 
+trait VectorOp[T] {
+  def owned(g: com.vividsolutions.jts.geom.Geometry): T
+  def shared(g: com.vividsolutions.jts.geom.Geometry): T
+
+  def |>[U](op: VectorOp[U])(implicit ev: T <:< com.vividsolutions.jts.geom.Geometry): VectorOp[U] =
+    VectorOp.compute(g => op.owned(this.shared(g)))
+}
+
+object VectorOp {
+  def compute[T](op: com.vividsolutions.jts.geom.Geometry => T): VectorOp[T] =
+    new VectorOp[T] {
+      def owned(g: com.vividsolutions.jts.geom.Geometry): T = op(g)
+      def shared(g: com.vividsolutions.jts.geom.Geometry): T = op(g)
+    }
+
+  def mutate[T](op: com.vividsolutions.jts.geom.Geometry => T): VectorOp[T] =
+    new VectorOp[T] {
+      def owned(g: com.vividsolutions.jts.geom.Geometry): T = op(g)
+      def shared(g: com.vividsolutions.jts.geom.Geometry): T = op(g.clone.asInstanceOf[com.vividsolutions.jts.geom.Geometry])
+    }
+}
+
+object Freeze extends VectorOp[Geometry] {
+  override def owned(g: com.vividsolutions.jts.geom.Geometry): Geometry = Geometry(g)
+  override def shared(g: com.vividsolutions.jts.geom.Geometry): Geometry = Geometry(g)
+}
+
 trait Geometry {
 
   def jtsGeom: jts.Geometry
@@ -61,6 +88,12 @@ trait Geometry {
     catch {
       case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(g.jtsGeom))
     }
+
+  def evaluate[T](op: VectorOp[T]): T =
+    op.shared(jtsGeom)
+
+  def operate[T <: com.vividsolutions.jts.geom.Geometry](op: VectorOp[T]): Geometry =
+    (op |> Freeze).shared(jtsGeom)
 
   override
   def equals(other: Any): Boolean =
