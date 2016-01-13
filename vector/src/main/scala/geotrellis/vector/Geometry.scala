@@ -21,6 +21,82 @@ import com.vividsolutions.jts.geom.TopologyException
 import GeomFactory._
 import geotrellis.proj4.CRS
 
+/**
+ * A planar, linear, vector geometry.  GeoTrellis uses the JTS library as the
+ * basis for computational geometry algorithms, but provides its own Geometry
+ * hierarchy to adapt the JTS API to one more convenient to Scala developers
+ * and coherent with GeoTrellis design goals. Notably:
+ *
+ *   - The GeoTrellis Geometry hierarchy models the GeoJSON specification,
+ *     instead of the slightly more complex Simple Features Specification used in
+ *     JTS.
+ *
+ *   - Where JTS algorithms often return the bare 'Geometry' type, GeoTrellis
+ *     tries to specify more concrete types when they are statically known.  For
+ *     example, applying an affine transformation always produces the same type
+ *     of Geometry that the transformation is being applied to, and this is
+ *     reflected in GeoTrellis vector.
+ *
+ *   - In the case of algorithms that may produce a few different types of
+ *     Geometry, but not all types, the GeometryResult type works with Scala's
+ *     exhaustiveness checker to detect when calling code does not account for
+ *     all possible results.  For example, the intersection between a Line and a
+ *     Point can only be a Point, or the empty geometry, so this operation
+ *     returns a PointOrNoResult.
+ *
+ *   - Extractors are provided to allow pattern matching over the contents
+ *     of Geometries. For example, you can extract the coordinates of a point with:
+ *     `val Point(x,y) = point`
+ *
+ * == JTS Interoperability ==
+ * Every Geotrellis Geometry wraps a JTS Geometry.  When a Geotrellis Geometry
+ * is constructed from a JTS Geometry it references that original object,
+ * rather than making a defensive copy.  JTS Geometry objects do expose some
+ * in-place mutating operations, so Geotrellis Geometry objects are also mutable.
+ * However, Geotrellis ensures that appropriate copies are made when using
+ * mutating operations, so it is usually safe to treat Geometry as immutable.
+ *
+ * In some cases JTS may provide functionality that has not been exposed in the
+ * Geotrellis API.  In this case you can access the JTS Geometry underlying a
+ * Geotrellis Geometry via the .unsafeGeom method. Subtypes of Geotrellis Geometry
+ * have implicit conversions from the corresponding types in JTS.
+ *
+ * If you do use JTS APIs directly, it is still straightforward to preserve
+ * immutability as most JTS operations also produce new geometries without
+ * modifying their inputs. Known exceptions include:
+ *   - `Geometry#normalize`
+ *   - `Geometry#apply(CoordinateFilter)`
+ *   - `Geometry#apply(CoordinateSequenceFilter)`
+ *   - `Geometry#apply(GeometryComponentFilter)`
+ *   - `Geometry#apply(GeometryFilter)`
+ *   - `Geometry#setSRID()`
+ *   - `Geometry#setUserData()`
+ *
+ * So if you need immutability in your application, please take care in using
+ * the above methods. For example, if you need to transform the coordinates
+ * directly using a JTS CoordinateFilter, you would need to be careful to avoid
+ * modifying the original geometry:
+ *
+ * {{{
+ * import geotrellis.vector._
+ * import com.vividsolutions.jts.{ geom => jts }
+ *
+ * /*
+ *  * Translate by directly adding to the coordinates, rather than going
+ *  * through a full matrix transform using the AffineTransform class.
+ *  */
+ * def myTranslate(dx: Double, dy: Double, geom: Geometry): Geometry = {
+ *   val jtsGeom = geom.unsafeGeom.clone().asInstanceOf[jts.Geometry]
+ *   jtsGeom.apply(new jts.CoordinateFilter {
+ *     def filter(coordinate: jts.Coordinate) {
+ *       coordinate.x = coordinate.x + dx
+ *       coordinate.y = coordinate.y + dy
+ *     }
+ *   })
+ *   Geometry(jtsGeom)
+ * }
+ * }}}
+ */
 trait Geometry {
 
   def unsafeGeom: jts.Geometry
