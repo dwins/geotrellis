@@ -29,9 +29,9 @@ class MultiLineSpec extends FunSpec with Matchers {
           Line( (0.0, 3.0), (1.0, 1.0), (1.0, 2.0), (0.0, 3.0) )
         )
 
-      val expected = ml.jtsGeom.clone
+      val expected = ml.unsafeGeom.clone
       ml.normalized
-      ml.jtsGeom.equals(expected) should be (true)
+      ml.unsafeGeom.equals(expected) should be (true)
     }
 
     it ("should maintain immutability over lines") {
@@ -41,10 +41,10 @@ class MultiLineSpec extends FunSpec with Matchers {
           Line( (0.0, 3.0), (1.0, 1.0), (1.0, 2.0), (0.0, 3.0) )
         )
 
-      val expected = ml.jtsGeom.clone
-      val coords = ml.lines(0).jtsGeom.getCoordinates()
+      val expected = ml.unsafeGeom.clone
+      val coords = ml.lines(0).unsafeGeom.getCoordinates()
       coords(0).setCoordinate(coords(1))
-      ml.jtsGeom.equals(expected) should be (true)
+      ml.unsafeGeom.equals(expected) should be (true)
     }
   }
 

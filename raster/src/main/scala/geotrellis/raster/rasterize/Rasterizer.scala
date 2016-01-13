@@ -156,7 +156,7 @@ object Rasterizer {
    * The iteration happens in the direction from the first point to the last point.
    */
   def foreachCellByLineString(line: Line, re: RasterExtent)(f: (Int, Int) => Unit) {
-    val cells = (for(coord <- line.jtsGeom.getCoordinates()) yield { 
+    val cells = (for(coord <- line.unsafeGeom.getCoordinates()) yield { 
       (re.mapXToGrid(coord.x), re.mapYToGrid(coord.y)) 
     }).toList
 

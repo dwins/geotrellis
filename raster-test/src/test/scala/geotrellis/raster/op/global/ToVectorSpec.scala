@@ -43,7 +43,7 @@ class ToVectorSpec extends FunSpec
   def br(col:Int,row:Int) = (d(col+1),(d(row)+1)* -10)    // Bottom right
 
   def assertPolygon(polygon:Polygon,expectedCoords:List[(Double,Double)]) = {
-    assertCoords(polygon.jtsGeom.getCoordinates.map(c => (c.x,c.y)),expectedCoords)
+    assertCoords(polygon.unsafeGeom.getCoordinates.map(c => (c.x,c.y)),expectedCoords)
   }
 
   def assertCoords(coordinates:Seq[(Double,Double)],expectedCoords:List[(Double,Double)]) = {
@@ -100,7 +100,7 @@ class ToVectorSpec extends FunSpec
 
       ones.map { polygon =>
         polygon.data should be (1)
-        val coordinates = polygon.geom.jtsGeom.getCoordinates.map(c => (c.x,c.y))
+        val coordinates = polygon.geom.unsafeGeom.getCoordinates.map(c => (c.x,c.y))
         coordinates.length should be (5)
         coordinates.map { c =>
           withClue (s"$c in expected coordinate set:") { onesCoords.contains(c) should be (true) }
@@ -141,8 +141,8 @@ class ToVectorSpec extends FunSpec
       val holes = poly.holes
       holes.length should be (1)
       val hole = holes(0)
-      assertCoords(shell.jtsGeom.getCoordinates.map { c => (c.x, c.y) }, onesCoords)
-      assertCoords(hole.jtsGeom.getCoordinates.map { c => (c.x, c.y) }, holeCoords)
+      assertCoords(shell.unsafeGeom.getCoordinates.map { c => (c.x, c.y) }, onesCoords)
+      assertCoords(hole.unsafeGeom.getCoordinates.map { c => (c.x, c.y) }, holeCoords)
     }
 
     it("should vectorize an off shape.") {
@@ -246,8 +246,8 @@ class ToVectorSpec extends FunSpec
       val holes = poly.holes
       holes.length should be (1)
       val hole = holes(0)
-      assertCoords(shell.jtsGeom.getCoordinates.map { c => (c.x, c.y) }, shellCoords)
-      assertCoords(hole.jtsGeom.getCoordinates.map { c => (c.x, c.y) }, holeCoords)
+      assertCoords(shell.unsafeGeom.getCoordinates.map { c => (c.x, c.y) }, shellCoords)
+      assertCoords(hole.unsafeGeom.getCoordinates.map { c => (c.x, c.y) }, holeCoords)
     }
 
     it("should vectorize an shape with a hole.") {
@@ -292,11 +292,11 @@ class ToVectorSpec extends FunSpec
       val polygon = ones(0)
 
       polygon.data should be (1)
-      val shellCoordinates = polygon.geom.jtsGeom.getExteriorRing.getCoordinates.map(c => (c.x,c.y))
+      val shellCoordinates = polygon.geom.unsafeGeom.getExteriorRing.getCoordinates.map(c => (c.x,c.y))
       assertCoords(shellCoordinates,expectedShellCoords)
 
-      polygon.geom.jtsGeom.getNumInteriorRing() should be (1)
-      val holeCoordinates = polygon.geom.jtsGeom.getInteriorRingN(0).getCoordinates.map(c => (c.x,c.y))
+      polygon.geom.unsafeGeom.getNumInteriorRing() should be (1)
+      val holeCoordinates = polygon.geom.unsafeGeom.getInteriorRingN(0).getCoordinates.map(c => (c.x,c.y))
       assertCoords(holeCoordinates,expectedHoleCoords)
     }
 
@@ -353,13 +353,13 @@ class ToVectorSpec extends FunSpec
       val polygon = ones(0)
 
       polygon.data should be (1)
-      val shellCoordinates = polygon.geom.jtsGeom.getExteriorRing.getCoordinates.map(c => (c.x,c.y))
+      val shellCoordinates = polygon.geom.unsafeGeom.getExteriorRing.getCoordinates.map(c => (c.x,c.y))
       assertCoords(shellCoordinates,expectedShellCoords)
 
-      polygon.geom.jtsGeom.getNumInteriorRing() should be (2)
-      val holeCoordinates = polygon.geom.jtsGeom.getInteriorRingN(0).getCoordinates.map(c => (c.x,c.y))
+      polygon.geom.unsafeGeom.getNumInteriorRing() should be (2)
+      val holeCoordinates = polygon.geom.unsafeGeom.getInteriorRingN(0).getCoordinates.map(c => (c.x,c.y))
       assertCoords(holeCoordinates,expectedHoleCoords)
-      val holeCoordinates2 = polygon.geom.jtsGeom.getInteriorRingN(1).getCoordinates.map(c => (c.x,c.y))
+      val holeCoordinates2 = polygon.geom.unsafeGeom.getInteriorRingN(1).getCoordinates.map(c => (c.x,c.y))
       assertCoords(holeCoordinates2,expectedHoleCoords2)
     }
 
@@ -436,7 +436,7 @@ class ToVectorSpec extends FunSpec
       toVector.length should be (1)
       val geom = toVector.head.geom
 
-      val coordinates = geom.jtsGeom.getCoordinates
+      val coordinates = geom.unsafeGeom.getCoordinates
 
       coordinates.length should be (5)
 
@@ -471,7 +471,7 @@ class ToVectorSpec extends FunSpec
       toVector.length should be (1)
       val geom = toVector.head.geom
 
-      val coordinates = geom.jtsGeom.getCoordinates
+      val coordinates = geom.unsafeGeom.getCoordinates
 
       coordinates.length should be (7)
 
@@ -513,7 +513,7 @@ class ToVectorSpec extends FunSpec
       toVector.length should be (1)
       val geom = toVector.head.geom
 
-      val coordinates = geom.jtsGeom.getCoordinates
+      val coordinates = geom.unsafeGeom.getCoordinates
 
       coordinates.length should be (7)
 

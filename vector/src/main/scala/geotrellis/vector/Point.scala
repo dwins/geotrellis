@@ -26,25 +26,25 @@ object Point {
   def apply(t: (Double, Double)): Point =
     apply(t._1, t._2)
 
-  implicit def jts2Point(jtsGeom: jts.Point): Point = apply(jtsGeom)
+  implicit def jts2Point(unsafeGeom: jts.Point): Point = apply(unsafeGeom)
 
   implicit def jtsCoord2Point(coord: jts.Coordinate): Point = 
     Point(factory.createPoint(coord))
 }
 
-case class Point(jtsGeom: jts.Point) extends Geometry
+case class Point(unsafeGeom: jts.Point) extends Geometry
                                         with Relatable
                                         with ZeroDimensions {
 
-  assert(!jtsGeom.isEmpty)
+  assert(!unsafeGeom.isEmpty)
 
   /** The Point's x-coordinate */
   val x: Double =
-    jtsGeom.getX
+    unsafeGeom.getX
 
   /** The Point's y-coordinate */
   val y: Double =
-    jtsGeom.getY
+    unsafeGeom.getY
 
   private[vector] def toCoordinate() =
     new jts.Coordinate(x, y)
@@ -63,7 +63,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * by this Point and g.
    */
   def intersection(g: Point): PointOrNoResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -77,7 +77,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * by this Point and g.
    */
   def intersection(g: Line): PointOrNoResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -91,7 +91,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * by this Point and g.
    */
   def intersection(g: Polygon): PointOrNoResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -105,7 +105,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * by this Point and g.
    */
   def intersection(g: MultiPoint): PointOrNoResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -119,7 +119,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * by this Point and g.
    */
   def intersection(g: MultiLine): PointOrNoResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -133,7 +133,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * by this Point and g.
    */
   def intersection(g: MultiPolygon): PointOrNoResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   // -- Union
 
@@ -149,7 +149,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * the points in g.
    */
   def union(g: ZeroDimensions): PointZeroDimensionsUnionResult =
-    jtsGeom.union(g.jtsGeom)
+    unsafeGeom.union(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point and all
@@ -163,7 +163,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * the points in l.
    */
   def union(l: Line): ZeroDimensionsLineUnionResult =
-    jtsGeom.union(l.jtsGeom)
+    unsafeGeom.union(l.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point and all
@@ -177,7 +177,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * the points in p.
    */
   def union(p: Polygon): AtMostOneDimensionPolygonUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point and all
@@ -191,7 +191,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * the points in ml.
    */
   def union(ml: MultiLine): PointMultiLineUnionResult =
-    jtsGeom.union(ml.jtsGeom)
+    unsafeGeom.union(ml.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point and all
@@ -205,7 +205,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * the points in mp.
    */
   def union(mp: MultiPolygon): PointMultiPolygonUnionResult =
-    jtsGeom.union(mp.jtsGeom)
+    unsafeGeom.union(mp.unsafeGeom)
 
   // -- Difference
 
@@ -221,7 +221,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * all the points in g.
    */
   def difference(other: Geometry): PointGeometryDifferenceResult =
-    jtsGeom.difference(other.jtsGeom)
+    unsafeGeom.difference(other.unsafeGeom)
 
 
   // -- SymDifference
@@ -231,49 +231,49 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * is not in p, and p if it is not this Point.
    */
   def symDifference(p: Point): PointPointSymDifferenceResult =
-    jtsGeom.symDifference(p.jtsGeom)
+    unsafeGeom.symDifference(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point, if it
    * is not in l, and all the points in l that are not this Point.
    */
   def symDifference(l: Line): ZeroDimensionsLineSymDifferenceResult =
-    jtsGeom.symDifference(l.jtsGeom)
+    unsafeGeom.symDifference(l.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point, if it
    * is not in p, and all the points in p that are not this Point.
    */
   def symDifference(p: Polygon): AtMostOneDimensionPolygonSymDifferenceResult =
-    jtsGeom.symDifference(p.jtsGeom)
+    unsafeGeom.symDifference(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point, if it
    * is not in mp, and all the points in mp that are not this Point.
    */
   def symDifference(mp: MultiPoint): ZeroDimensionsMultiPointSymDifferenceResult =
-    jtsGeom.symDifference(mp.jtsGeom)
+    unsafeGeom.symDifference(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point, if it
    * is not in ml, and all the points in ml that are not this Point.
    */
   def symDifference(ml: MultiLine): PointMultiLineSymDifferenceResult =
-    jtsGeom.symDifference(ml.jtsGeom)
+    unsafeGeom.symDifference(ml.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of this Point, if it
    * is not in mp, and all the points in mp that are not this Point.
    */
   def symDifference(mp: MultiPolygon): PointMultiPolygonSymDifferenceResult =
-    jtsGeom.symDifference(mp.jtsGeom)
+    unsafeGeom.symDifference(mp.unsafeGeom)
 
 
   // -- Buffer
 
   /** Computes a buffer area around this Point having width d. */
   def buffer(d: Double): Polygon =
-    jtsGeom.buffer(d) match {
+    unsafeGeom.buffer(d) match {
       case p: jts.Polygon => Polygon(p)
       case x =>
         sys.error(s"Unexpected result for Point buffer: ${x.getGeometryType}")
@@ -288,7 +288,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * T*****FF*.
    */
   def contains(g: ZeroDimensions): Boolean =
-    jtsGeom.contains(g.jtsGeom)
+    unsafeGeom.contains(g.unsafeGeom)
 
   /**
    * Tests whether this Point is covered by the specified Geometry g.
@@ -296,7 +296,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * *TF**F*** or **FT*F*** or **F*TF***.
    */
   def coveredBy(g: Geometry): Boolean =
-    jtsGeom.coveredBy(g.jtsGeom)
+    unsafeGeom.coveredBy(g.unsafeGeom)
 
   /**
    * Tests whether this Point covers the specified ZeroDimensions g.
@@ -304,7 +304,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * T*****FF* or *T****FF* or ***T**FF* or ****T*FF*.
    */
   def covers(g: ZeroDimensions): Boolean =
-    jtsGeom.covers(g.jtsGeom)
+    unsafeGeom.covers(g.unsafeGeom)
 
   /**
    * Tests whether this Point touches the specified AtLeastOneDimensions g.
@@ -312,7 +312,7 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * FT*******, F**T***** or F***T****.
    */
   def touches(g: AtLeastOneDimension): Boolean =
-    jtsGeom.touches(g.jtsGeom)
+    unsafeGeom.touches(g.unsafeGeom)
 
   /**
    * Tests whether this Point is within the specified Geometry g.
@@ -320,5 +320,5 @@ case class Point(jtsGeom: jts.Point) extends Geometry
    * T*F**F***.
    */
   def within(g: Geometry): Boolean =
-    jtsGeom.within(g.jtsGeom)
+    unsafeGeom.within(g.unsafeGeom)
 }

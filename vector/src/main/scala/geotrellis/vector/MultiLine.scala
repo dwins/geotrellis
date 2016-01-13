@@ -31,43 +31,43 @@ object MultiLine {
     MultiLine(ls)
 
   def apply(ls: Traversable[Line]): MultiLine = 
-    MultiLine(factory.createMultiLineString(ls.map(_.jtsGeom).toArray))
+    MultiLine(factory.createMultiLineString(ls.map(_.unsafeGeom).toArray))
 
   def apply(ls: Array[Line]): MultiLine = {
     val len = ls.length
     val arr = Array.ofDim[jts.LineString](len)
     cfor(0)(_ < len, _ + 1) { i =>
-      arr(i) = ls(i).jtsGeom
+      arr(i) = ls(i).unsafeGeom
     }
 
     MultiLine(factory.createMultiLineString(arr))
   }
 
-  implicit def jts2MultiLine(jtsGeom: jts.MultiLineString): MultiLine = apply(jtsGeom)
+  implicit def jts2MultiLine(unsafeGeom: jts.MultiLineString): MultiLine = apply(unsafeGeom)
 }
 
-case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry 
+case class MultiLine(unsafeGeom: jts.MultiLineString) extends MultiGeometry 
                                                       with Relatable
                                                       with OneDimension {
 
   /** Returns a unique representation of the geometry based on standard coordinate ordering. */
   def normalized(): MultiLine = { 
-    val geom = jtsGeom.clone.asInstanceOf[jts.MultiLineString]
+    val geom = unsafeGeom.clone.asInstanceOf[jts.MultiLineString]
     geom.normalize
     MultiLine(geom)
   }
 
   /** Returns the Lines contained in this MultiLine. */
   lazy val lines: Array[Line] = {
-    for (i <- 0 until jtsGeom.getNumGeometries) yield {
-      Line(jtsGeom.getGeometryN(i).clone.asInstanceOf[jts.LineString])
+    for (i <- 0 until unsafeGeom.getNumGeometries) yield {
+      Line(unsafeGeom.getGeometryN(i).clone.asInstanceOf[jts.LineString])
     }
   }.toArray
 
   /** Tests if the initial vertex equals the final vertex for every Line in
     * this MultiLine. */
   lazy val isClosed: Boolean =
-    jtsGeom.isClosed
+    unsafeGeom.isClosed
 
   /**
    * Returns the boundary of this MultiLine.
@@ -76,11 +76,11 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * MultiLine is empty.
    */
   lazy val boundary: OneDimensionBoundaryResult =
-    jtsGeom.getBoundary
+    unsafeGeom.getBoundary
 
   /** Returns this MulitLine's vertices. */
   lazy val vertices: Array[Point] = {
-    val coords = jtsGeom.getCoordinates
+    val coords = unsafeGeom.getCoordinates
     val arr = Array.ofDim[Point](coords.size)
     cfor(0)(_ < arr.size, _ + 1) { i =>
       val coord = coords(i)
@@ -90,7 +90,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
   }
 
   /** Get the number of vertices in this geometry */
-  lazy val vertexCount: Int = jtsGeom.getNumPoints
+  lazy val vertexCount: Int = unsafeGeom.getNumPoints
 
 // -- Intersection
 
@@ -99,7 +99,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * by the contained lines.
    */
   def intersection(): MultiLineMultiLineIntersectionResult =
-    lines.map(_.jtsGeom).reduce[jts.Geometry] {
+    lines.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.intersection(_)
     }
 
@@ -115,7 +115,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * by this MultiLine and p.
    */
   def intersection(p: Point): PointOrNoResult =
-    jtsGeom.intersection(p.jtsGeom)
+    unsafeGeom.intersection(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -129,7 +129,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * by this MultiLine and g.
    */
   def intersection(g: AtLeastOneDimension): OneDimensionAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -143,7 +143,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * by this MultiLine and mp.
    */
   def intersection(mp: MultiPoint): MultiPointAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(mp.jtsGeom)
+    unsafeGeom.intersection(mp.unsafeGeom)
 
 
   // -- Union
@@ -153,7 +153,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
     * Useful for merging overlapping line segments.
     */
   def union(): MultiLineMultiLineUnionResult =
-    jtsGeom.union
+    unsafeGeom.union
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -167,7 +167,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine and p.
    */
   def union(p: Point): PointMultiLineUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -181,7 +181,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine and l.
    */
   def union(l:Line): LineOneDimensionUnionResult =
-    jtsGeom.union(l.jtsGeom)
+    unsafeGeom.union(l.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -195,7 +195,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine and p.
    */
   def union(p: Polygon): AtMostOneDimensionPolygonUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -209,7 +209,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine and mp.
    */
   def union(mp: MultiPoint): MultiPointMultiLineUnionResult =
-    jtsGeom.union(mp.jtsGeom)
+    unsafeGeom.union(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -223,7 +223,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine and ml.
    */
   def union(ml: MultiLine): MultiLineMultiLineUnionResult =
-    jtsGeom.union(ml.jtsGeom)
+    unsafeGeom.union(ml.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -237,7 +237,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine and mp.
    */
   def union(mp: MultiPolygon): MultiLineMultiPolygonUnionResult =
-    jtsGeom.union(mp.jtsGeom)
+    unsafeGeom.union(mp.unsafeGeom)
 
 
   // -- Difference
@@ -247,7 +247,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * the first line that are not in the other contained lines.
    */
   def difference(): MultiLineMultiLineDifferenceResult =
-    lines.map(_.jtsGeom).reduce[jts.Geometry] { 
+    lines.map(_.unsafeGeom).reduce[jts.Geometry] { 
       _.difference(_)
     }
 
@@ -263,7 +263,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine that are not in g.
    */
   def difference(g: Geometry): MultiLineGeometryDifferenceResult =
-    jtsGeom.difference(g.jtsGeom)
+    unsafeGeom.difference(g.unsafeGeom)
 
 
   // -- SymDifference
@@ -274,7 +274,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * the contained lines that are unique to one line.
    */
   def symDifference(): MultiLineMultiLineSymDifferenceResult =
-    lines.map(_.jtsGeom).reduce[jts.Geometry] {
+    lines.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.symDifference(_)
     }
 
@@ -284,7 +284,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * MultiLine.
    */
   def symDifference(p: Point): PointMultiLineSymDifferenceResult =
-    jtsGeom.symDifference(p.jtsGeom)
+    unsafeGeom.symDifference(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -292,7 +292,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine.
    */
   def symDifference(mp: MultiPoint): MultiPointMultiLineSymDifferenceResult =
-    jtsGeom.symDifference(mp.jtsGeom)
+    unsafeGeom.symDifference(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -300,7 +300,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine.
    */
   def symDifference(g: OneDimension): OneDimensionOneDimensionSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -308,7 +308,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine.
    */
   def symDifference(p: Polygon): AtMostOneDimensionPolygonSymDifferenceResult =
-    jtsGeom.symDifference(p.jtsGeom)
+    unsafeGeom.symDifference(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -316,7 +316,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * this MultiLine.
    */
   def symDifference(mp: MultiPolygon): MultiLineMultiPolygonSymDifferenceResult =
-    jtsGeom.symDifference(mp.jtsGeom)
+    unsafeGeom.symDifference(mp.unsafeGeom)
 
 
   // -- Predicates
@@ -328,7 +328,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * T*****FF*.
    */
   def contains(g: AtMostOneDimension): Boolean =
-    jtsGeom.contains(g.jtsGeom)
+    unsafeGeom.contains(g.unsafeGeom)
 
   /**
    * Tests whether this MultiLine is covered by the specified AtLeastOneDimension g.
@@ -336,7 +336,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * *TF**F*** or **FT*F*** or **F*TF***.
    */
   def coveredBy(g: AtLeastOneDimension): Boolean =
-    jtsGeom.coveredBy(g.jtsGeom)
+    unsafeGeom.coveredBy(g.unsafeGeom)
 
   /**
    * Tests whether this MultiLine covers the specified AtMostOneDimension g.
@@ -344,7 +344,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * T*****FF* or *T****FF* or ***T**FF* or ****T*FF*.
    */
   def covers(g: AtMostOneDimension): Boolean =
-    jtsGeom.covers(g.jtsGeom)
+    unsafeGeom.covers(g.unsafeGeom)
 
   /**
    * Tests whether this MultiLine crosses the specified MultiPoint mp.
@@ -352,7 +352,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * T*****T** (L/P).
    */
   def crosses(mp: MultiPoint): Boolean =
-    jtsGeom.crosses(mp.jtsGeom)
+    unsafeGeom.crosses(mp.unsafeGeom)
 
   /**
    * Tests whether this MultiLine crosses the specified AtLeastOneDimension g.
@@ -360,7 +360,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * 0******** (L/L) or T*****T** (L/P and L/A).
    */
   def crosses(g: AtLeastOneDimension): Boolean =
-    jtsGeom.crosses(g.jtsGeom)
+    unsafeGeom.crosses(g.unsafeGeom)
 
   /**
    * Tests whether this MultiLine overlaps the specified OneDimension g.
@@ -368,7 +368,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * 1*T***T**.
    */
   def overlaps(g: OneDimension): Boolean =
-    jtsGeom.overlaps(g.jtsGeom)
+    unsafeGeom.overlaps(g.unsafeGeom)
 
   /**
    * Tests whether this MultiLine touches the specified Geometry g.
@@ -376,7 +376,7 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * FT*******, F**T***** or F***T****.
    */
   def touches(g: Geometry): Boolean =
-    jtsGeom.touches(g.jtsGeom)
+    unsafeGeom.touches(g.unsafeGeom)
 
   /**
    * Tests whether this MultiLine is within the specified AtLeastOneDimension g.
@@ -384,5 +384,5 @@ case class MultiLine(jtsGeom: jts.MultiLineString) extends MultiGeometry
    * T*F**F***.
    */
   def within(g: AtLeastOneDimension): Boolean =
-    jtsGeom.within(g.jtsGeom)
+    unsafeGeom.within(g.unsafeGeom)
 }

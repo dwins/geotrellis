@@ -227,12 +227,12 @@ class PolygonSpec extends FunSpec with Matchers {
       val l2 = Line(Point(0,4), Point(0,7), Point(5,7), Point(5,4), Point(0,4))
       val p2 = Polygon(l2)
       val mp = MultiPolygon(Polygon(l1), Polygon(l2))
-      (mp.jtsGeom.isValid) should be (false)
+      (mp.unsafeGeom.isValid) should be (false)
       val mpUnion = mp.union match {
         case PolygonResult(p) => p
         case MultiPolygonResult(mp) => mp
       }
-      (mpUnion.jtsGeom.isValid) should be (true)
+      (mpUnion.unsafeGeom.isValid) should be (true)
       mpUnion should be (Polygon(Line(Point(0, 0), Point(0, 4), Point(0, 5), Point(0, 7),
         Point(5, 7), Point(5, 5), Point(5, 4), Point(5, 0), Point(0, 0))))
     }
@@ -582,21 +582,21 @@ class PolygonSpec extends FunSpec with Matchers {
 
     it ("should maintain immutability over normalization") {
       val p = Polygon(Line(Point(0,0), Point(0,10), Point(10,10), Point(10,0), Point(0,0)))
-      val expected = p.jtsGeom.clone
+      val expected = p.unsafeGeom.clone
       p.normalized
-      p.jtsGeom.equals(expected) should be (true)
+      p.unsafeGeom.equals(expected) should be (true)
     }
 
     it ("should maintain immutability over exterior") {
       val p = Polygon(Line(Point(0,0), Point(0,10), Point(10,10), Point(10,0), Point(0,0)),
                       Line(Point(11,17), Point(11,18), Point(14,17), Point(11,17)))
 
-      val expected = p.jtsGeom.clone
-      val coord = p.exterior.points(0).jtsGeom.getCoordinate()
-      val newCoord = Point(5,5).jtsGeom.getCoordinate()
+      val expected = p.unsafeGeom.clone
+      val coord = p.exterior.points(0).unsafeGeom.getCoordinate()
+      val newCoord = Point(5,5).unsafeGeom.getCoordinate()
       coord.setCoordinate(newCoord)
 
-      p.jtsGeom.equals(expected) should be (true)
+      p.unsafeGeom.equals(expected) should be (true)
     }
   }
 }

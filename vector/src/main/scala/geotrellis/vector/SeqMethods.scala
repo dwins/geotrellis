@@ -35,7 +35,7 @@ trait SeqMethods {
 
     def unionGeometries(): TwoDimensionsTwoDimensionsUnionResult = {
       val cascadedPolygonUnion =
-        new CascadedPolygonUnion(polygons.map(geom => geom.jtsGeom).toSeq)
+        new CascadedPolygonUnion(polygons.map(geom => geom.unsafeGeom).toSeq)
       cascadedPolygonUnion.union()
     }
     def intersectionGeometries() = mp.intersection
@@ -69,7 +69,7 @@ trait SeqMethods {
 
     def unionGeometries(): TwoDimensionsTwoDimensionsUnionResult = {
       val cascadedPolygonUnion =
-        new CascadedPolygonUnion(mp.polygons.map(geom => geom.jtsGeom).toSeq)
+        new CascadedPolygonUnion(mp.polygons.map(geom => geom.unsafeGeom).toSeq)
       cascadedPolygonUnion.union()
     }
     def intersectionGeometries() = mp.intersection

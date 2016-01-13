@@ -57,16 +57,16 @@ class GeometryCollectionBuilder {
     addAll(geoms)
 
   def result(): GeometryCollection = {
-    val jtsGeom = factory.createGeometryCollection(
+    val unsafeGeom = factory.createGeometryCollection(
       (
         points ++ lines ++ polygons ++
         multiPoints ++ multiLines ++ multiPolygons ++
         collections
-      ).map(_.jtsGeom).toArray
+      ).map(_.unsafeGeom).toArray
     )
 
     new GeometryCollection(points, lines, polygons,
       multiPoints, multiLines, multiPolygons,
-      collections, jtsGeom)
+      collections, unsafeGeom)
   }
 }

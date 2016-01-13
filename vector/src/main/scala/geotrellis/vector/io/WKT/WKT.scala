@@ -34,6 +34,6 @@ object WKT {
 
   def write(geom: Geometry): String = {
     if (writerBox.get == null) writerBox.set(new WKTWriter())
-    writerBox.get.write(geom.jtsGeom)
+    writerBox.get.write(geom.unsafeGeom)
   }
 }

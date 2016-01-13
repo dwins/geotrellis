@@ -32,11 +32,11 @@ object GeometryCollection {
              geometryCollections: Seq[GeometryCollection] = Seq()
            ): GeometryCollection =
   {
-    val jtsGeom = factory.createGeometryCollection(
+    val unsafeGeom = factory.createGeometryCollection(
       (points ++ lines ++ polygons ++ multiPoints ++ multiLines ++ multiPolygons ++ geometryCollections)
-        .map(_.jtsGeom).toArray
+        .map(_.unsafeGeom).toArray
     )
-    new GeometryCollection(points, lines, polygons, multiPoints, multiLines, multiPolygons, geometryCollections, jtsGeom)
+    new GeometryCollection(points, lines, polygons, multiPoints, multiLines, multiPolygons, geometryCollections, unsafeGeom)
   }
 
   def apply(geoms: Traversable[Geometry]): GeometryCollection = {
@@ -70,7 +70,7 @@ class GeometryCollection(
     val multiLines: Seq[MultiLine],
     val multiPolygons: Seq[MultiPolygon],
     val geometryCollections: Seq[GeometryCollection],
-    val jtsGeom: jts.GeometryCollection
+    val unsafeGeom: jts.GeometryCollection
   ) extends Geometry {
 
   def geometries: Seq[Geometry] =
@@ -78,7 +78,7 @@ class GeometryCollection(
 
   /** Returns a unique representation of the geometry based on standard coordinate ordering. */
   def normalized(): GeometryCollection = { 
-    val geom = jtsGeom.clone.asInstanceOf[jts.GeometryCollection]
+    val geom = unsafeGeom.clone.asInstanceOf[jts.GeometryCollection]
     geom.normalize
     GeometryCollection(geom)
   }
@@ -95,7 +95,7 @@ class GeometryCollection(
     }
 
   lazy val area: Double =
-    jtsGeom.getArea
+    unsafeGeom.getArea
 
   override def equals(that: Any): Boolean = {
     that match {
@@ -112,5 +112,5 @@ class GeometryCollection(
   }
 
   override def hashCode(): Int  =
-    jtsGeom.hashCode()
+    unsafeGeom.hashCode()
 }

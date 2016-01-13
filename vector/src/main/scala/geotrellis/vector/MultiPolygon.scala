@@ -30,48 +30,48 @@ object MultiPolygon {
     apply(ps)
 
   def apply(ps: Traversable[Polygon]): MultiPolygon =
-    MultiPolygon(factory.createMultiPolygon(ps.map(_.jtsGeom).toArray))
+    MultiPolygon(factory.createMultiPolygon(ps.map(_.unsafeGeom).toArray))
 
   def apply(ps: Array[Polygon]): MultiPolygon = {
     val len = ps.length
     val arr = Array.ofDim[jts.Polygon](len)
     cfor(0)(_ < len, _ + 1) { i =>
-      arr(i) = ps(i).jtsGeom
+      arr(i) = ps(i).unsafeGeom
     }
 
     MultiPolygon(factory.createMultiPolygon(arr))
   }
 
-  implicit def jts2MultiPolygon(jtsGeom: jts.MultiPolygon): MultiPolygon = apply(jtsGeom)
+  implicit def jts2MultiPolygon(unsafeGeom: jts.MultiPolygon): MultiPolygon = apply(unsafeGeom)
 }
 
-case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
+case class MultiPolygon(unsafeGeom: jts.MultiPolygon) extends MultiGeometry
                                                    with Relatable
                                                    with TwoDimensions {
 
   /** Returns a unique representation of the geometry based on standard coordinate ordering. */
   def normalized(): MultiPolygon = { 
-    val geom = jtsGeom.clone.asInstanceOf[jts.MultiPolygon]
+    val geom = unsafeGeom.clone.asInstanceOf[jts.MultiPolygon]
     geom.normalize
     MultiPolygon(geom)
   }
 
   /** Returns the Polygons contained in MultiPolygon. */
   lazy val polygons: Array[Polygon] = {
-    for (i <- 0 until jtsGeom.getNumGeometries) yield {
-      Polygon(jtsGeom.getGeometryN(i).clone.asInstanceOf[jts.Polygon])
+    for (i <- 0 until unsafeGeom.getNumGeometries) yield {
+      Polygon(unsafeGeom.getGeometryN(i).clone.asInstanceOf[jts.Polygon])
     }
   }.toArray
 
   lazy val area: Double =
-    jtsGeom.getArea
+    unsafeGeom.getArea
 
   lazy val boundary: MultiLineResult =
-    jtsGeom.getBoundary
+    unsafeGeom.getBoundary
 
   /** Returns this MulitPolygon's vertices. */
   lazy val vertices: Array[Point] = {
-    val coords = jtsGeom.getCoordinates
+    val coords = unsafeGeom.getCoordinates
     val arr = Array.ofDim[Point](coords.size)
     cfor(0)(_ < arr.size, _ + 1) { i =>
       val coord = coords(i)
@@ -81,12 +81,12 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
   }
 
   /** Get the number of vertices in this geometry */
-  lazy val vertexCount: Int = jtsGeom.getNumPoints
+  lazy val vertexCount: Int = unsafeGeom.getNumPoints
 
   // -- Intersection
 
   def intersection(): MultiPolygonMultiPolygonIntersectionResult =
-    polygons.map(_.jtsGeom).reduce[jts.Geometry] {
+    polygons.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.intersection(_)
     }
 
@@ -97,7 +97,7 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
   def safeIntersection(p: Point): PointOrNoResult =
     try intersection(p)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(p.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(p.unsafeGeom))
     }
 
   def &(l: Line): OneDimensionAtLeastOneDimensionIntersectionResult =
@@ -107,17 +107,17 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
   def safeIntersection(l: Line): OneDimensionAtLeastOneDimensionIntersectionResult =
     try intersection(l)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(l.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(l.unsafeGeom))
     }
 
   def &(g: TwoDimensions): TwoDimensionsTwoDimensionsIntersectionResult =
     intersection(g)
   def intersection(g: TwoDimensions): TwoDimensionsTwoDimensionsIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
   def safeIntersection(g: TwoDimensions): TwoDimensionsTwoDimensionsIntersectionResult =
     try intersection(g)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(g.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(g.unsafeGeom))
     }
 
   def &(ls: MultiLine): OneDimensionAtLeastOneDimensionIntersectionResult =
@@ -127,7 +127,7 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
   def safeIntersection(ls: MultiLine): OneDimensionAtLeastOneDimensionIntersectionResult =
     try intersection(ls)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(ls.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(ls.unsafeGeom))
     }
 
   // -- Union
@@ -136,7 +136,7 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
     union(p)
 
   def union(p: Point): PointMultiPolygonUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   def |(l: Line): LineMultiPolygonUnionResult =
     union(l)
@@ -153,11 +153,11 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
   def |(ps: MultiPoint): LineMultiPolygonUnionResult =
     union(ps)
   def union(ps: MultiPoint): LineMultiPolygonUnionResult =
-    jtsGeom.union(ps.jtsGeom)
+    unsafeGeom.union(ps.unsafeGeom)
 
   def |(ls: MultiLine) = union(ls)
   def union(ls: MultiLine): LineMultiPolygonUnionResult =
-    jtsGeom.union(ls.jtsGeom)
+    unsafeGeom.union(ls.unsafeGeom)
 
   def |(ps: MultiPolygon): TwoDimensionsTwoDimensionsUnionResult =
     union(ps)
@@ -170,79 +170,79 @@ case class MultiPolygon(jtsGeom: jts.MultiPolygon) extends MultiGeometry
   // -- Difference
 
   def difference(): MultiPolygonMultiPolygonDifferenceResult =
-    polygons.map(_.jtsGeom).reduce[jts.Geometry] {
+    polygons.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.difference(_)
     }
 
   def -(p: Point): MultiPolygonXDifferenceResult =
     difference(p)
   def difference(p: Point): MultiPolygonXDifferenceResult =
-    jtsGeom.difference(p.jtsGeom)
+    unsafeGeom.difference(p.unsafeGeom)
 
   def -(l: Line): MultiPolygonXDifferenceResult =
     difference(l)
   def difference(l: Line): MultiPolygonXDifferenceResult =
-    jtsGeom.difference(l.jtsGeom)
+    unsafeGeom.difference(l.unsafeGeom)
 
   def -(p: Polygon): TwoDimensionsTwoDimensionsDifferenceResult =
     difference(p)
   def difference(p: Polygon): TwoDimensionsTwoDimensionsDifferenceResult =
-    jtsGeom.difference(p.jtsGeom)
+    unsafeGeom.difference(p.unsafeGeom)
 
   def -(ps: MultiPoint): MultiPolygonXDifferenceResult =
     difference(ps)
   def difference(ps: MultiPoint): MultiPolygonXDifferenceResult =
-    jtsGeom.difference(ps.jtsGeom)
+    unsafeGeom.difference(ps.unsafeGeom)
 
   def -(ls: MultiLine): MultiPolygonXDifferenceResult =
     difference(ls)
   def difference(ls: MultiLine): MultiPolygonXDifferenceResult =
-    jtsGeom.difference(ls.jtsGeom)
+    unsafeGeom.difference(ls.unsafeGeom)
 
   def -(ps: MultiPolygon): TwoDimensionsTwoDimensionsDifferenceResult =
     difference(ps)
   def difference(ps: MultiPolygon): TwoDimensionsTwoDimensionsDifferenceResult =
-    jtsGeom.difference(ps.jtsGeom)
+    unsafeGeom.difference(ps.unsafeGeom)
 
   // -- SymDifference
 
   def symDifference(): MultiPolygonMultiPolygonSymDifferenceResult =
-    polygons.map(_.jtsGeom).reduce[jts.Geometry] {
+    polygons.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.symDifference(_)
     }
 
   def symDifference(g: ZeroDimensions): PointMultiPolygonSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   def symDifference(g: OneDimension): LineMultiPolygonSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   def symDifference(g: TwoDimensions): TwoDimensionsTwoDimensionsSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   // -- Predicates
 
   def contains(g: Geometry): Boolean =
-    jtsGeom.contains(g.jtsGeom)
+    unsafeGeom.contains(g.unsafeGeom)
 
   def coveredBy(g: TwoDimensions): Boolean =
-    jtsGeom.coveredBy(g.jtsGeom)
+    unsafeGeom.coveredBy(g.unsafeGeom)
 
   def covers(g: Geometry): Boolean =
-    jtsGeom.covers(g.jtsGeom)
+    unsafeGeom.covers(g.unsafeGeom)
 
   def crosses(g: OneDimension): Boolean =
-    jtsGeom.crosses(g.jtsGeom)
+    unsafeGeom.crosses(g.unsafeGeom)
 
   def crosses(ps: MultiPoint): Boolean =
-    jtsGeom.crosses(ps.jtsGeom)
+    unsafeGeom.crosses(ps.unsafeGeom)
 
   def overlaps(g: TwoDimensions): Boolean =
-    jtsGeom.crosses(g.jtsGeom)
+    unsafeGeom.crosses(g.unsafeGeom)
 
   def touches(g: AtLeastOneDimension): Boolean =
-    jtsGeom.touches(g.jtsGeom)
+    unsafeGeom.touches(g.unsafeGeom)
 
   def within(g: TwoDimensions): Boolean =
-    jtsGeom.within(g.jtsGeom)
+    unsafeGeom.within(g.unsafeGeom)
 }

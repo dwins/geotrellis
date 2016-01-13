@@ -29,13 +29,13 @@ object MultiPoint {
     apply(ps)
 
   def apply(ps: Traversable[Point]): MultiPoint =
-    MultiPoint(factory.createMultiPoint(ps.map(_.jtsGeom).toArray))
+    MultiPoint(factory.createMultiPoint(ps.map(_.unsafeGeom).toArray))
 
   def apply(ps: Array[Point]): MultiPoint = {
     val len = ps.length
     val arr = Array.ofDim[jts.Point](len)
     cfor(0)(_ < len, _ + 1) { i =>
-      arr(i) = ps(i).jtsGeom
+      arr(i) = ps(i).unsafeGeom
     }
 
     MultiPoint(factory.createMultiPoint(arr))
@@ -44,16 +44,16 @@ object MultiPoint {
   def apply(ps: Traversable[(Double, Double)])(implicit d: DummyImplicit): MultiPoint =
     MultiPoint(factory.createMultiPoint(ps.map { p => new jts.Coordinate(p._1, p._2) }.toArray))
 
-  implicit def jts2MultiPoint(jtsGeom: jts.MultiPoint): MultiPoint = apply(jtsGeom)
+  implicit def jts2MultiPoint(unsafeGeom: jts.MultiPoint): MultiPoint = apply(unsafeGeom)
 }
 
-case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry 
+case class MultiPoint(unsafeGeom: jts.MultiPoint) extends MultiGeometry 
                                                   with Relatable
                                                   with ZeroDimensions {
 
   /** Returns a unique representation of the geometry based on standard coordinate ordering. */
   def normalized(): MultiPoint = { 
-    val geom = jtsGeom.clone.asInstanceOf[jts.MultiPoint]
+    val geom = unsafeGeom.clone.asInstanceOf[jts.MultiPoint]
     geom.normalize
     MultiPoint(geom)
   }
@@ -62,7 +62,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
   lazy val points: Array[Point] = vertices
 
   lazy val vertices: Array[Point] = {
-    val coords = jtsGeom.getCoordinates
+    val coords = unsafeGeom.getCoordinates
     val arr = Array.ofDim[Point](coords.size)
     cfor(0)(_ < arr.size, _ + 1) { i =>
       val coord = coords(i)
@@ -72,7 +72,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
   }
 
   /** Get the number of vertices in this geometry */
-  lazy val vertexCount: Int = jtsGeom.getNumPoints
+  lazy val vertexCount: Int = unsafeGeom.getNumPoints
 
   // -- Intersection
 
@@ -84,7 +84,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
     intersection()
 
   def intersection(): MultiPointMultiPointIntersectionResult =
-    points.map(_.jtsGeom).reduce[jts.Geometry] {
+    points.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.intersection(_)
     }
 
@@ -100,7 +100,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * by this MultiPoint and p.
    */
   def intersection(p: Point): PointOrNoResult =
-    jtsGeom.intersection(p.jtsGeom)
+    unsafeGeom.intersection(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -114,7 +114,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * by this MultiPoint and mp.
    */
   def intersection(mp: MultiPoint): MultiPointMultiPointIntersectionResult =
-    jtsGeom.intersection(mp.jtsGeom)
+    unsafeGeom.intersection(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -128,7 +128,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * by this MultiPoint and g.
    */
   def intersection(g: AtLeastOneDimension): MultiPointAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
 
   // -- Union
@@ -138,7 +138,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
     * Useful for de-duplication.
     */
   def union(): MultiPointMultiPointUnionResult =
-    jtsGeom.union
+    unsafeGeom.union
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -152,7 +152,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint and p.
    */
   def union(p: Point): PointZeroDimensionsUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -166,7 +166,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint and l.
    */
   def union(l: Line): ZeroDimensionsLineUnionResult =
-    jtsGeom.union(l.jtsGeom)
+    unsafeGeom.union(l.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -180,7 +180,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint and p.
    */
   def union(p: Polygon): AtMostOneDimensionPolygonUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -194,7 +194,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint and mp.
    */
   def union(mp: MultiPoint): MultiPointMultiPointUnionResult =
-    jtsGeom.union(mp.jtsGeom)
+    unsafeGeom.union(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -208,7 +208,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint and ml.
    */
   def union(ml: MultiLine): MultiPointMultiLineUnionResult =
-    jtsGeom.union(ml.jtsGeom)
+    unsafeGeom.union(ml.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -222,7 +222,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint and mp.
    */
   def union(mp: MultiPolygon): MultiPointMultiPolygonUnionResult =
-    jtsGeom.union(mp.jtsGeom)
+    unsafeGeom.union(mp.unsafeGeom)
 
 
   // -- Difference
@@ -232,7 +232,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * the first line not in the other contained lines.
    */
   def difference(): MultiPointMultiPointDifferenceResult =
-    points.map(_.jtsGeom).reduce[jts.Geometry] {
+    points.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.difference(_)
     }
 
@@ -248,7 +248,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint that are not in g.
    */
   def difference(g: Geometry): MultiPointGeometryDifferenceResult =
-    jtsGeom.difference(g.jtsGeom)
+    unsafeGeom.difference(g.unsafeGeom)
 
 
   // -- SymDifference
@@ -258,7 +258,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * points in this MultiPoint.
    */
   def symDifference(): MultiPointMultiPointSymDifferenceResult =
-    points.map(_.jtsGeom).reduce[jts.Geometry] {
+    points.map(_.unsafeGeom).reduce[jts.Geometry] {
       _.symDifference(_)
     }
 
@@ -268,7 +268,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint.
    */
   def symDifference(g: ZeroDimensions): ZeroDimensionsMultiPointSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -276,7 +276,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint.
    */
   def symDifference(l: Line): ZeroDimensionsLineSymDifferenceResult =
-    jtsGeom.symDifference(l.jtsGeom)
+    unsafeGeom.symDifference(l.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -284,7 +284,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint.
    */
   def symDifference(p: Polygon): AtMostOneDimensionPolygonSymDifferenceResult =
-    jtsGeom.symDifference(p.jtsGeom)
+    unsafeGeom.symDifference(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -292,7 +292,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint.
    */
   def symDifference(ml: MultiLine): MultiPointMultiLineSymDifferenceResult =
-    jtsGeom.symDifference(ml.jtsGeom)
+    unsafeGeom.symDifference(ml.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -300,7 +300,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * this MultiPoint.
    */
   def symDifference(mp: MultiPolygon): MultiPointMultiPolygonSymDifferenceResult =
-    jtsGeom.symDifference(mp.jtsGeom)
+    unsafeGeom.symDifference(mp.unsafeGeom)
 
 
   // -- Misc.
@@ -315,7 +315,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * a line instead of a polygon.
    */
   def convexHull(): Polygon =
-    jtsGeom.convexHull() match {
+    unsafeGeom.convexHull() match {
       case p: jts.Polygon => Polygon(p)
       case x =>
         sys.error(s"Unexpected result for MultiPoint convexHull: ${x.getGeometryType}")
@@ -331,7 +331,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * T*****FF*.
    */
   def contains(g: ZeroDimensions): Boolean =
-    jtsGeom.contains(g.jtsGeom)
+    unsafeGeom.contains(g.unsafeGeom)
 
   /**
    * Tests whether this MultiPoint is covered by the specified Geometry g.
@@ -339,7 +339,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * T*F**F*** or *TF**F*** or **FT*F*** or **F*TF***.
    */
   def coveredBy(g: Geometry): Boolean =
-    jtsGeom.coveredBy(g.jtsGeom)
+    unsafeGeom.coveredBy(g.unsafeGeom)
 
   /**
    * Tests whether this MultiPoint covers the specified ZeroMostOneDimensions g.
@@ -347,7 +347,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * T*****FF* or *T****FF* or ***T**FF* or ****T*FF*.
    */
   def covers(g: ZeroDimensions): Boolean =
-    jtsGeom.covers(g.jtsGeom)
+    unsafeGeom.covers(g.unsafeGeom)
 
   /**
     * Tests whether this MultiPoint crosses the specified AtLeastOneDimension g.
@@ -355,7 +355,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
     * T*T****** (P/L and P/A).
     */
   def crosses(g: AtLeastOneDimension): Boolean =
-    jtsGeom.crosses(g.jtsGeom)
+    unsafeGeom.crosses(g.unsafeGeom)
 
   /**
    * Tests whether this MultiPoint overlaps the specified MultiPoint mp.
@@ -363,7 +363,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * T*T***T**.
    */
   def overlaps(mp: MultiPoint): Boolean =
-    jtsGeom.overlaps(mp.jtsGeom)
+    unsafeGeom.overlaps(mp.unsafeGeom)
 
   /**
    * Tests whether this MultiPoint touches the specified AtLeastOneDimension g.
@@ -371,7 +371,7 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * FT*******, F**T***** or F***T****.
    */
   def touches(g: AtLeastOneDimension): Boolean =
-    jtsGeom.touches(g.jtsGeom)
+    unsafeGeom.touches(g.unsafeGeom)
 
   /**
    * Tests whether this MultiPoint is within the specified Geometry g.
@@ -379,5 +379,5 @@ case class MultiPoint(jtsGeom: jts.MultiPoint) extends MultiGeometry
    * T*F**F***.
    */
   def within(g: Geometry): Boolean =
-    jtsGeom.within(g.jtsGeom)
+    unsafeGeom.within(g.unsafeGeom)
 }

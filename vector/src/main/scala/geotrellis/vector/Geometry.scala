@@ -23,26 +23,26 @@ import geotrellis.proj4.CRS
 
 trait Geometry {
 
-  def jtsGeom: jts.Geometry
+  def unsafeGeom: jts.Geometry
 
   def isValid: Boolean =
-    jtsGeom.isValid
+    unsafeGeom.isValid
 
   def distance(other: Geometry): Double =
-    jtsGeom.distance(other.jtsGeom)
+    unsafeGeom.distance(other.unsafeGeom)
 
   def withinDistance(other: Geometry, dist: Double): Boolean =
-    jtsGeom.isWithinDistance(other.jtsGeom, dist)
+    unsafeGeom.isWithinDistance(other.unsafeGeom, dist)
 
   def centroid: PointOrNoResult =
-    jtsGeom.getCentroid
+    unsafeGeom.getCentroid
 
   def interiorPoint: PointOrNoResult =
-    jtsGeom.getInteriorPoint
+    unsafeGeom.getInteriorPoint
 
   def envelope: Extent =
-    if(jtsGeom.isEmpty) Extent(0.0, 0.0, 0.0, 0.0)
-    else jtsGeom.getEnvelopeInternal
+    if(unsafeGeom.isEmpty) Extent(0.0, 0.0, 0.0, 0.0)
+    else unsafeGeom.getEnvelopeInternal
 
   def &(g: Geometry): TwoDimensionsTwoDimensionsIntersectionResult =
     intersection(g)
@@ -51,7 +51,7 @@ trait Geometry {
    * by this Polygon and g.
    */
   def intersection(g: Geometry): TwoDimensionsTwoDimensionsIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
   /**
    * Computes a Result that represents a Geometry made up of the points shared
    * by this Polygon and g. If it fails, it reduces the precision to avoid [[TopologyException]].
@@ -59,20 +59,20 @@ trait Geometry {
   def safeIntersection(g: Geometry): TwoDimensionsTwoDimensionsIntersectionResult =
     try intersection(g)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(g.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(g.unsafeGeom))
     }
 
   override
   def equals(other: Any): Boolean =
     other match {
-      case g: Geometry => jtsGeom.equals(g.jtsGeom)
+      case g: Geometry => unsafeGeom.equals(g.unsafeGeom)
       case _ => false
   }
 
   override
-  def hashCode(): Int = jtsGeom.hashCode
+  def hashCode(): Int = unsafeGeom.hashCode
 
-  override def toString = jtsGeom.toString
+  override def toString = unsafeGeom.toString
 }
 
 object Geometry {
@@ -96,9 +96,9 @@ object Geometry {
 trait Relatable { self: Geometry =>
 
   def intersects(other: Geometry): Boolean =
-    jtsGeom.intersects(other.jtsGeom)
+    unsafeGeom.intersects(other.unsafeGeom)
 
   def disjoint(other: Geometry): Boolean =
-    jtsGeom.disjoint(other.jtsGeom)
+    unsafeGeom.disjoint(other.unsafeGeom)
 
 }

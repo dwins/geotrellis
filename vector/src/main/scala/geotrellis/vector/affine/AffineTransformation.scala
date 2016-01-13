@@ -15,14 +15,14 @@ object AffineTransformation {
 trait AffineTransformation {
   val trans: jtsutil.AffineTransformation
 
-  def transform(geom: Point): Point = Point(transform(geom.jtsGeom))
-  def transform(geom: Line): Line = Line(transform(geom.jtsGeom))
-  def transform(geom: Polygon): Polygon = Polygon(transform(geom.jtsGeom))
-  def transform(geom: MultiPoint): MultiPoint = MultiPoint(transform(geom.jtsGeom))
-  def transform(geom: MultiLine): MultiLine = MultiLine(transform(geom.jtsGeom))
-  def transform(geom: MultiPolygon): MultiPolygon = MultiPolygon(transform(geom.jtsGeom))
-  def transform(geom: GeometryCollection): GeometryCollection = GeometryCollection(transform(geom.jtsGeom))
-  def transform(geom: Geometry): Geometry = Geometry(transform(geom.jtsGeom))
+  def transform(geom: Point): Point = Point(transform(geom.unsafeGeom))
+  def transform(geom: Line): Line = Line(transform(geom.unsafeGeom))
+  def transform(geom: Polygon): Polygon = Polygon(transform(geom.unsafeGeom))
+  def transform(geom: MultiPoint): MultiPoint = MultiPoint(transform(geom.unsafeGeom))
+  def transform(geom: MultiLine): MultiLine = MultiLine(transform(geom.unsafeGeom))
+  def transform(geom: MultiPolygon): MultiPolygon = MultiPolygon(transform(geom.unsafeGeom))
+  def transform(geom: GeometryCollection): GeometryCollection = GeometryCollection(transform(geom.unsafeGeom))
+  def transform(geom: Geometry): Geometry = Geometry(transform(geom.unsafeGeom))
 
   private def transform[D <: jts.Geometry](g: D): D = trans.transform(g).asInstanceOf[D]
 

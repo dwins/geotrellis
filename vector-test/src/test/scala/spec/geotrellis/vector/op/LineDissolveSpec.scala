@@ -87,14 +87,14 @@ class LineDissolveSpec extends FunSpec
 
     it("should maintain immutability over dissolve") {
       val s = List(Line((0, 0), (1, 1)), Line((2, 2), (3, 3)))
-      val expected = s.map(_.jtsGeom.clone)
+      val expected = s.map(_.unsafeGeom.clone)
       val d = s.dissolve
       
-      val coord = d(0).jtsGeom.getCoordinate()
-      val newCoord = Point(5,5).jtsGeom.getCoordinate()
+      val coord = d(0).unsafeGeom.getCoordinate()
+      val newCoord = Point(5,5).unsafeGeom.getCoordinate()
       coord.setCoordinate(newCoord)
 
-      val js = s.map(_.jtsGeom)
+      val js = s.map(_.unsafeGeom)
       cfor(0)(_ < expected.length, _ + 1) { i =>
         js(i).equals(expected(i)) should be (true)
       }

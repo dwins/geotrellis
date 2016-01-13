@@ -79,7 +79,7 @@ class WKBWriter(outputDimension: Int, byteOrder: Int) {
   def write(geom: Geometry, srid: Option[Int] = None): Array[Byte] = {
     byteArrayOS.reset()
     this.srid = srid
-    write(geom.jtsGeom, byteArrayOutStream)
+    write(geom.unsafeGeom, byteArrayOutStream)
     byteArrayOS.toByteArray
   }
 
@@ -104,36 +104,36 @@ class WKBWriter(outputDimension: Int, byteOrder: Int) {
   }
 
   private def writePoint(pt: Point, os: OutStream) {
-    if (pt.jtsGeom.getCoordinateSequence.size() == 0)
+    if (pt.unsafeGeom.getCoordinateSequence.size() == 0)
       throw new IllegalArgumentException("Empty Points cannot be represented in WKB")
     writeByteOrder(os)
     writeGeometryType(WKBConstants.wkbPoint, pt, os)
-    writeCoordinateSequence(pt.jtsGeom.getCoordinateSequence, false, os)
+    writeCoordinateSequence(pt.unsafeGeom.getCoordinateSequence, false, os)
   }
 
   private def writeLineString(line: Line, os: OutStream) {
     writeByteOrder(os)
     writeGeometryType(WKBConstants.wkbLineString, line, os)
-    writeCoordinateSequence(line.jtsGeom.getCoordinateSequence, true, os)
+    writeCoordinateSequence(line.unsafeGeom.getCoordinateSequence, true, os)
   }
 
   private def writePolygon(poly: Polygon, os: OutStream)
   {
     writeByteOrder(os)
     writeGeometryType(WKBConstants.wkbPolygon, poly, os)
-    writeInt(poly.jtsGeom.getNumInteriorRing + 1, os)
-    writeCoordinateSequence(poly.jtsGeom.getExteriorRing.getCoordinateSequence, true, os)
-    for (i <- 0 until poly.jtsGeom.getNumInteriorRing){
-      writeCoordinateSequence(poly.jtsGeom.getInteriorRingN(i).getCoordinateSequence, true, os)
+    writeInt(poly.unsafeGeom.getNumInteriorRing + 1, os)
+    writeCoordinateSequence(poly.unsafeGeom.getExteriorRing.getCoordinateSequence, true, os)
+    for (i <- 0 until poly.unsafeGeom.getNumInteriorRing){
+      writeCoordinateSequence(poly.unsafeGeom.getInteriorRingN(i).getCoordinateSequence, true, os)
     }
   }
 
   private def writeGeometryCollection(geometryType: Int, gc: GeometryCollection, os: OutStream) {
     writeByteOrder(os)
     writeGeometryType(geometryType, gc, os)
-    writeInt(gc.jtsGeom.getNumGeometries, os)
-    for (i <- 0 until gc.jtsGeom.getNumGeometries)
-      write(gc.jtsGeom.getGeometryN(i), os)
+    writeInt(gc.unsafeGeom.getNumGeometries, os)
+    for (i <- 0 until gc.unsafeGeom.getNumGeometries)
+      write(gc.unsafeGeom.getGeometryN(i), os)
   }
 
   private def writeByteOrder(os: OutStream) {

@@ -64,7 +64,7 @@ object PolygonRasterizer {
     val rtree = new STRtree
 
     /* Find the outer ring's segments */
-    val coords = poly.jtsGeom.getExteriorRing.getCoordinates
+    val coords = poly.unsafeGeom.getExteriorRing.getCoordinates
     cfor(1)(_ < coords.length, _ + 1) { ci =>
       val coord1 = coords(ci - 1)
       val coord2 = coords(ci)
@@ -83,7 +83,7 @@ object PolygonRasterizer {
 
     /* Find the segments for the holes */
     cfor(0)(_ < poly.numberOfHoles, _ + 1) { i =>
-      val coords = poly.jtsGeom.getInteriorRingN(i).getCoordinates
+      val coords = poly.unsafeGeom.getInteriorRingN(i).getCoordinates
       cfor(1)(_ < coords.length, _ + 1) { ci =>
         val coord1 = coords(ci - 1)
         val coord2 = coords(ci)

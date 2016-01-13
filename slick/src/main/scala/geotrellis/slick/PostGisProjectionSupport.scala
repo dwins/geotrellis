@@ -122,7 +122,7 @@ object PostGisProjectionSupportUtils {
         if (srid != -1)
           Projected(geom, srid).asInstanceOf[T]
         else
-          Projected(geom, geom.jtsGeom.getSRID).asInstanceOf[T]
+          Projected(geom, geom.unsafeGeom.getSRID).asInstanceOf[T]
     }
 
   /** copy from [[org.postgis.PGgeometry#splitSRID]] */

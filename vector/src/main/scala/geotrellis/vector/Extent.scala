@@ -47,7 +47,7 @@ case class Extent(xmin: Double, ymin: Double, xmax: Double, ymax: Double) extend
   if (xmin > xmax) { throw ExtentRangeError(s"Invalid Extent: xmin must be less than xmax (xmin=$xmin, xmax=$xmax)")  }
   if (ymin > ymax) { throw ExtentRangeError(s"Invalid Extent: ymin must be less than ymax (ymin=$ymin, ymax=$ymax)") }
 
-  def jtsGeom =
+  def unsafeGeom =
     factory.createPolygon(
       factory.createLinearRing(
         Array(

@@ -24,8 +24,8 @@ import geotrellis.vector._
 import spire.syntax.cfor._
 
 object Polygon {
-  implicit def jtsToPolygon(jtsGeom: jts.Polygon): Polygon =
-    Polygon(jtsGeom)
+  implicit def jtsToPolygon(unsafeGeom: jts.Polygon): Polygon =
+    Polygon(unsafeGeom)
 
   def apply(exterior: Point*)(implicit d: DummyImplicit): Polygon =
     apply(Line(exterior), Set())
@@ -48,7 +48,7 @@ object Polygon {
       sys.error(s"Cannot create a polygon with exterior with less that 4 points: $exterior")
     }
 
-    val extGeom = factory.createLinearRing(exterior.jtsGeom.getCoordinates)
+    val extGeom = factory.createLinearRing(exterior.unsafeGeom.getCoordinates)
 
     val holeGeoms = (
       for (hole <- holes) yield {
@@ -58,7 +58,7 @@ object Polygon {
           if (hole.vertices.length < 4)
             sys.error(s"Cannot create a polygon with a hole with less that 4 points: $hole")
           else
-            factory.createLinearRing(hole.jtsGeom.getCoordinates)
+            factory.createLinearRing(hole.unsafeGeom.getCoordinates)
         }
       }).toArray
 
@@ -70,35 +70,35 @@ object Polygon {
   }
 }
 
-case class Polygon(jtsGeom: jts.Polygon) extends Geometry 
+case class Polygon(unsafeGeom: jts.Polygon) extends Geometry 
                                             with Relatable
                                             with TwoDimensions {
 
-  assert(!jtsGeom.isEmpty, s"Polygon Empty: $jtsGeom")
+  assert(!unsafeGeom.isEmpty, s"Polygon Empty: $unsafeGeom")
 
   /** Returns a unique representation of the geometry based on standard coordinate ordering. */
   def normalized(): Polygon = { 
-    val geom = jtsGeom.clone.asInstanceOf[jts.Polygon]
+    val geom = unsafeGeom.clone.asInstanceOf[jts.Polygon]
     geom.normalize
     Polygon(geom)
   }
 
   /** Tests whether this Polygon is a rectangle. */
   lazy val isRectangle: Boolean =
-    jtsGeom.isRectangle
+    unsafeGeom.isRectangle
 
   /** Returns the area of this Polygon. */
   lazy val area: Double =
-    jtsGeom.getArea
+    unsafeGeom.getArea
 
   /** Returns the exterior ring of this Polygon. */
   lazy val exterior: Line =
-    Line(jtsGeom.getExteriorRing.clone.asInstanceOf[jts.LineString])
+    Line(unsafeGeom.getExteriorRing.clone.asInstanceOf[jts.LineString])
 
   /** Returns the hole rings of this Polygon. */
   lazy val holes: Array[Line] = {
     for (i <- 0 until numberOfHoles) yield
-      Line(jtsGeom.getInteriorRingN(i).clone.asInstanceOf[jts.LineString])
+      Line(unsafeGeom.getInteriorRingN(i).clone.asInstanceOf[jts.LineString])
   }.toArray
 
   /** Returns true if this Polygon contains holes */
@@ -107,7 +107,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
 
   /** Returns the number of holes in this Polygon */
   lazy val numberOfHoles: Int =
-    jtsGeom.getNumInteriorRing
+    unsafeGeom.getNumInteriorRing
 
   /**
    * Returns the boundary of this Polygon.
@@ -115,11 +115,11 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * exterior and interior boundaries.
    */
   lazy val boundary: PolygonBoundaryResult =
-    jtsGeom.getBoundary
+    unsafeGeom.getBoundary
 
   /** Returns this Polygon's vertices. */
   lazy val vertices: Array[Point] = {
-    val coords = jtsGeom.getCoordinates
+    val coords = unsafeGeom.getCoordinates
     val arr = Array.ofDim[Point](coords.size)
     cfor(0)(_ < arr.size, _ + 1) { i =>
       val coord = coords(i)
@@ -129,7 +129,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
   }
 
   /** Get the number of vertices in this geometry */
-  lazy val vertexCount: Int = jtsGeom.getNumPoints
+  lazy val vertexCount: Int = unsafeGeom.getNumPoints
 
   /**
    * Returns this Polygon's perimeter.
@@ -137,7 +137,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * boundaries.
    */
   lazy val perimeter: Double =
-    jtsGeom.getLength
+    unsafeGeom.getLength
 
   // -- Intersection
 
@@ -153,7 +153,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * by this Polygon and p.
    */
   def intersection(p: Point): PointOrNoResult =
-    jtsGeom.intersection(p.jtsGeom)
+    unsafeGeom.intersection(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -162,7 +162,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
   def safeIntersection(p: Point): PointOrNoResult =
     try intersection(p)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(p.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(p.unsafeGeom))
     }
 
   /**
@@ -177,7 +177,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * by this Polygon and mp.
    */
   def intersection(mp: MultiPoint): MultiPointAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(mp.jtsGeom)
+    unsafeGeom.intersection(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -186,7 +186,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
   def safeIntersection(mp: MultiPoint): MultiPointAtLeastOneDimensionIntersectionResult =
     try intersection(mp)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(mp.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(mp.unsafeGeom))
     }
 
   /**
@@ -201,7 +201,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * by this Polygon and g.
    */
   def intersection(g: OneDimension): OneDimensionAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -210,7 +210,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
   def safeIntersection(g: OneDimension): OneDimensionAtLeastOneDimensionIntersectionResult =
     try intersection(g)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(g.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(g.unsafeGeom))
     }
 
   /**
@@ -225,7 +225,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * by this Polygon and g.
    */
   def intersection(g: TwoDimensions): TwoDimensionsTwoDimensionsIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -234,7 +234,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
   def safeIntersection(g: TwoDimensions): TwoDimensionsTwoDimensionsIntersectionResult =
     try intersection(g)
     catch {
-      case _: TopologyException => simplifier.reduce(jtsGeom).intersection(simplifier.reduce(g.jtsGeom))
+      case _: TopologyException => simplifier.reduce(unsafeGeom).intersection(simplifier.reduce(g.unsafeGeom))
     }
 
   // -- Union
@@ -251,7 +251,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * this Polygon and g.
    */
   def union(g: AtMostOneDimension): AtMostOneDimensionPolygonUnionResult =
-    jtsGeom.union(g.jtsGeom)
+    unsafeGeom.union(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -268,7 +268,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
   def union(g: TwoDimensions): TwoDimensionsTwoDimensionsUnionResult = g match {
     case p:Polygon => Seq(this, p).unionGeometries
     case mp:MultiPolygon => (this +: mp.polygons).toSeq.unionGeometries
-    case _ => jtsGeom.union(g.jtsGeom)
+    case _ => unsafeGeom.union(g.unsafeGeom)
   }
 
 
@@ -287,7 +287,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * this Polygon that are not in g.
    */
   def difference(g: AtMostOneDimension): PolygonAtMostOneDimensionDifferenceResult =
-    jtsGeom.difference(g.jtsGeom)
+    unsafeGeom.difference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -301,7 +301,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * this Polygon that are not in g.
    */
   def difference(g: TwoDimensions): TwoDimensionsTwoDimensionsDifferenceResult =
-    jtsGeom.difference(g.jtsGeom)
+    unsafeGeom.difference(g.unsafeGeom)
 
 
   // -- SymDifference
@@ -312,7 +312,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * this Polygon.
    */
   def symDifference(g: AtMostOneDimension): AtMostOneDimensionPolygonSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -320,7 +320,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * this Polygon.
    */
   def symDifference(g: TwoDimensions): TwoDimensionsTwoDimensionsSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
 
   // -- Buffer
@@ -328,7 +328,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
 
   /** Computes a buffer area around this Polygon having width d. */
   def buffer(d: Double): Polygon =
-    jtsGeom.buffer(d) match {
+    unsafeGeom.buffer(d) match {
       case p: jts.Polygon => Polygon(p)
       case x =>
         sys.error(s"Unexpected result for Polygon buffer: ${x.getGeometryType}")
@@ -343,7 +343,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * T*****FF*.
    */
   def contains(g: Geometry): Boolean =
-    jtsGeom.contains(g.jtsGeom)
+    unsafeGeom.contains(g.unsafeGeom)
 
   /**
    * Tests whether this Polygon is covered by the specified TwoDimensions g.
@@ -351,7 +351,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * *TF**F*** or **FT*F*** or **F*TF***.
    */
   def coveredBy(g: TwoDimensions): Boolean =
-    jtsGeom.coveredBy(g.jtsGeom)
+    unsafeGeom.coveredBy(g.unsafeGeom)
 
   /**
    * Tests whether this Polygon covers the specified Geometry g.
@@ -359,7 +359,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * T*****FF* or *T****FF* or ***T**FF* or ****T*FF*.
    */
   def covers(g: Geometry): Boolean =
-    jtsGeom.covers(g.jtsGeom)
+    unsafeGeom.covers(g.unsafeGeom)
 
   /**
    * Tests whether this Polygon crosses the specified MultiPoint mp.
@@ -367,7 +367,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * T*****T** (A/P).
    */
   def crosses(mp: MultiPoint): Boolean =
-    jtsGeom.crosses(mp.jtsGeom)
+    unsafeGeom.crosses(mp.unsafeGeom)
 
   /**
    * Tests whether this Polygon crosses the specified OneDimension g.
@@ -375,7 +375,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * T*****T** (A/L).
    */
   def crosses(g: OneDimension): Boolean =
-    jtsGeom.crosses(g.jtsGeom)
+    unsafeGeom.crosses(g.unsafeGeom)
 
   /**
    * Tests whether this Polygon overlaps the specified TwoDimensions g.
@@ -383,7 +383,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * T*T***T**.
    */
   def overlaps(g: TwoDimensions): Boolean =
-    jtsGeom.overlaps(g.jtsGeom)
+    unsafeGeom.overlaps(g.unsafeGeom)
 
   /**
    * Tests whether this Polygon touches the specified Geometry g.
@@ -391,7 +391,7 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * FT*******, F**T***** or F***T****.
    */
   def touches(g: Geometry): Boolean =
-    jtsGeom.touches(g.jtsGeom)
+    unsafeGeom.touches(g.unsafeGeom)
 
   /**
    * Tests whether this Polygon is within the specified TwoDimensions g.
@@ -399,5 +399,5 @@ case class Polygon(jtsGeom: jts.Polygon) extends Geometry
    * T*F**F***.
    */
   def within(g: TwoDimensions): Boolean =
-    jtsGeom.within(g.jtsGeom)
+    unsafeGeom.within(g.unsafeGeom)
 }

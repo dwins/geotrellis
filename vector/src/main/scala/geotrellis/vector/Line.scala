@@ -23,8 +23,8 @@ import spire.syntax.cfor._
 
 object Line {
 
-  implicit def jtsToLine(jtsGeom: jts.LineString): Line =
-    apply(jtsGeom)
+  implicit def jtsToLine(unsafeGeom: jts.LineString): Line =
+    apply(unsafeGeom)
 
   def apply(points: (Double, Double)*)(implicit d: DummyImplicit): Line =
     apply(points)
@@ -43,29 +43,29 @@ object Line {
     val pointArray = points.toArray
     val coords = Array.ofDim[jts.Coordinate](pointArray.size)
     cfor(0)(_ < pointArray.size, _ + 1) { i =>
-      coords(i) = pointArray(i).jtsGeom.getCoordinate
+      coords(i) = pointArray(i).unsafeGeom.getCoordinate
     }
 
     Line(factory.createLineString(coords))
   }
 }
 
-case class Line(jtsGeom: jts.LineString) extends Geometry
+case class Line(unsafeGeom: jts.LineString) extends Geometry
                                             with Relatable
                                             with OneDimension {
 
-  assert(!jtsGeom.isEmpty, s"LineString Empty: $jtsGeom")
+  assert(!unsafeGeom.isEmpty, s"LineString Empty: $unsafeGeom")
 
   /** Returns a unique representation of the geometry based on standard coordinate ordering. */
   def normalized(): Line = { 
-    val geom = jtsGeom.clone.asInstanceOf[jts.LineString]
+    val geom = unsafeGeom.clone.asInstanceOf[jts.LineString]
     geom.normalize
     Line(geom)
   }
 
   /** Tests if the initial vertex equals the final vertex. */
   lazy val isClosed: Boolean =
-    jtsGeom.isClosed
+    unsafeGeom.isClosed
 
   /**
    * Tests whether this Line is simple.
@@ -73,7 +73,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * boundary points.
    */
   lazy val isSimple: Boolean =
-    jtsGeom.isSimple
+    unsafeGeom.isSimple
 
   /**
    * Returns the boundary of this Line.
@@ -81,27 +81,27 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * boundary of a closed Line is empty.
    */
   lazy val boundary: OneDimensionBoundaryResult =
-    jtsGeom.getBoundary
+    unsafeGeom.getBoundary
 
   def points: Array[Point] = vertices
 
   /** Returns this Line's vertices. */
   def vertices: Array[Point] = {
-    val size = jtsGeom.getNumPoints
+    val size = unsafeGeom.getNumPoints
     val arr = Array.ofDim[Point](size)
     cfor(0)(_ < arr.size, _ + 1) { i =>
-      val p = jtsGeom.getPointN(i).clone.asInstanceOf[jts.Point]
+      val p = unsafeGeom.getPointN(i).clone.asInstanceOf[jts.Point]
       arr(i) = Point(p)
     }
     arr
   }
 
   /** Get the number of vertices in this geometry */
-  lazy val vertexCount: Int = jtsGeom.getNumPoints
+  lazy val vertexCount: Int = unsafeGeom.getNumPoints
 
   /** Returns the length of this Line. */
   lazy val length: Double =
-    jtsGeom.getLength
+    unsafeGeom.getLength
 
   /** Returns a closed version of the line. If already closed, just return this. */
   def closed(): Line =
@@ -124,7 +124,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * by this Line and p.
    */
   def intersection(p: Point): PointOrNoResult =
-    jtsGeom.intersection(p.jtsGeom)
+    unsafeGeom.intersection(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -138,7 +138,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * by this Line and mp.
    */
   def intersection(mp: MultiPoint): MultiPointAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(mp.jtsGeom)
+    unsafeGeom.intersection(mp.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of the points shared
@@ -153,7 +153,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    */
 
   def intersection(g: AtLeastOneDimension): OneDimensionAtLeastOneDimensionIntersectionResult =
-    jtsGeom.intersection(g.jtsGeom)
+    unsafeGeom.intersection(g.unsafeGeom)
 
   // -- Union
 
@@ -169,7 +169,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line and g.
    */
   def union(g: ZeroDimensions): ZeroDimensionsLineUnionResult =
-    jtsGeom.union(g.jtsGeom)
+    unsafeGeom.union(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -183,7 +183,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line and g.
    */
   def union(g: OneDimension): LineOneDimensionUnionResult =
-    jtsGeom.union(g.jtsGeom)
+    unsafeGeom.union(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -197,7 +197,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line and p.
    */
   def union(p: Polygon): AtMostOneDimensionPolygonUnionResult =
-    jtsGeom.union(p.jtsGeom)
+    unsafeGeom.union(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -211,7 +211,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line and mp.
    */
   def union(mp: MultiPolygon): LineMultiPolygonUnionResult =
-    jtsGeom.union(mp.jtsGeom)
+    unsafeGeom.union(mp.unsafeGeom)
 
   // -- Difference
 
@@ -227,7 +227,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line that are not in g.
    */
   def difference(g: ZeroDimensions): LineResult =
-    jtsGeom.difference(g.jtsGeom)
+    unsafeGeom.difference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -241,7 +241,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line that are not in g.
    */
   def difference(g: AtLeastOneDimension): LineAtLeastOneDimensionDifferenceResult =
-    jtsGeom.difference(g.jtsGeom)
+    unsafeGeom.difference(g.unsafeGeom)
 
 
   // -- SymDifference
@@ -252,7 +252,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line.
    */
   def symDifference(g: ZeroDimensions): ZeroDimensionsLineSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -260,7 +260,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line.
    */
   def symDifference(g: OneDimension): OneDimensionOneDimensionSymDifferenceResult =
-    jtsGeom.symDifference(g.jtsGeom)
+    unsafeGeom.symDifference(g.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -268,7 +268,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line.
    */
   def symDifference(p: Polygon): AtMostOneDimensionPolygonSymDifferenceResult =
-    jtsGeom.symDifference(p.jtsGeom)
+    unsafeGeom.symDifference(p.unsafeGeom)
 
   /**
    * Computes a Result that represents a Geometry made up of all the points in
@@ -276,7 +276,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * this Line.
    */
   def symDifference(mp: MultiPolygon): LineMultiPolygonSymDifferenceResult =
-    jtsGeom.symDifference(mp.jtsGeom)
+    unsafeGeom.symDifference(mp.unsafeGeom)
 
 
   // -- Buffer
@@ -284,7 +284,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
 
   /** Computes a buffer area around this Line having width d. */
   def buffer(d: Double): Polygon =
-    jtsGeom.buffer(d) match {
+    unsafeGeom.buffer(d) match {
       case p: jts.Polygon => Polygon(p)
       case x =>
         sys.error(s"Unexpected result for Line buffer: ${x.getGeometryType}")
@@ -299,7 +299,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * T*****FF*.
    */
   def contains(g: AtMostOneDimension): Boolean =
-    jtsGeom.contains(g.jtsGeom)
+    unsafeGeom.contains(g.unsafeGeom)
 
   /**
    * Tests whether this Line is covered by the specified AtLeastOneDimension g.
@@ -307,7 +307,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * *TF**F*** or **FT*F*** or **F*TF***.
    */
   def coveredBy(g: AtLeastOneDimension): Boolean =
-    jtsGeom.coveredBy(g.jtsGeom)
+    unsafeGeom.coveredBy(g.unsafeGeom)
 
   /**
    * Tests whether this Line covers the specified AtMostOneDimensions g.
@@ -315,7 +315,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * T*****FF* or *T****FF* or ***T**FF* or ****T*FF*.
    */
   def covers(g: AtMostOneDimension): Boolean =
-    jtsGeom.covers(g.jtsGeom)
+    unsafeGeom.covers(g.unsafeGeom)
 
   /**
    * Tests whether this Line crosses the specified MultiPoint mp.
@@ -323,7 +323,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * T*****T** (L/P).
    */
   def crosses(mp: MultiPoint): Boolean =
-    jtsGeom.crosses(mp.jtsGeom)
+    unsafeGeom.crosses(mp.unsafeGeom)
 
   /**
    * Tests whether this Line crosses the specified AtLeastOneDimension g.
@@ -331,7 +331,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * 0******** (L/L) or T*T****** (L/A).
    */
   def crosses(g: AtLeastOneDimension): Boolean =
-    jtsGeom.crosses(g.jtsGeom)
+    unsafeGeom.crosses(g.unsafeGeom)
 
   /**
    * Tests whether this Line overlaps the specified OneDimension g.
@@ -339,7 +339,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * 1*T***T**.
    */
   def overlaps(g: OneDimension): Boolean =
-    jtsGeom.overlaps(g.jtsGeom)
+    unsafeGeom.overlaps(g.unsafeGeom)
 
   /**
    * Tests whether this Line touches the specified Geometry g.
@@ -347,7 +347,7 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * FT*******, F**T***** or F***T****.
    */
   def touches(g: Geometry): Boolean =
-    jtsGeom.touches(g.jtsGeom)
+    unsafeGeom.touches(g.unsafeGeom)
 
   /**
    * Tests whether this Line is within the specified AtLeastOneDimension g.
@@ -355,5 +355,5 @@ case class Line(jtsGeom: jts.LineString) extends Geometry
    * T*F**F***.
    */
   def within(g: AtLeastOneDimension): Boolean =
-    jtsGeom.within(g.jtsGeom)
+    unsafeGeom.within(g.unsafeGeom)
 }
