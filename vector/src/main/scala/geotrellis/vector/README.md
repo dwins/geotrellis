@@ -139,47 +139,41 @@ For example, if you need to transform coordinates directly using a JTS Coordinat
 ```
 
 ##Features
-The `Feature` class is odd. At first blush, it thinly wraps one of the afforementioned `Geometry` objects along with some type of data. Its purpose will be clear if you can keep in mind the importance of the geojson format of serialization which is now ubiquitous in the GIS software space. It can be found in `Feature.scala`.
+In GIS terminology, a "feature" is a discrete object in a geospatial dataset.
+The GeoTrellis `Feature` represents features by storing a Geometry and associated data.
 
-Let's examine some source code so that this is all a bit clearer.
-From `geotrellis.vector.Feature.scala`:
+In Scala, Feature is declared:
+
 ```scala
-abstract class Feature[D] {
-  type G <: Geometry
-  val geom: G ; val data: D
-}
-
-case class PointFeature[D](geom: Point, data: D) extends Feature[D] {type G = Point}
+case class Feature[+G <: Geometry, +D](geom: G, data: D)
 ```
-These type signatures tell us a good deal. Let's make this easy on our brains and put our findings into a list.
-- The type `G` is [some instance or other](http://docs.scala-lang.org/tutorials/tour/upper-type-bounds.html) of `Geometry` (which we explored just above).
-- The value, `geom`, which anything the compiler recognizes as a `Feature` must make available in its immediate closure must be of type `G`.
-- As with `geom` the compiler will not be happy unless a `Feature` provides `data`.
-- Whereas, with `geom`, we could say a good deal about the types of stuff (only things we call geometries) that would satisfy the compiler, we have nothing in particular to say about `D`.
 
-Our difficulty with `D` is compounded by the fact that the `Point`-focused feature, `PointFeature` makes good on `geom` by using `Point` (which is one of the concrete instances of `Geometry` introduced above) while telling us nothing at all about `data`'s type.
-Let's look at some code which does something with D (code which calls one of D's methods) so that we know what to expect. Remember: types are just contracts which the compiler is kind enough to enforce for us. In well-written code, types (and type variables!) can tell us a great deal about what was in the head of the author.
-There's only one package which does anything with `D`, so our job should be relatively easy. From `geotrellis.vector.io.json.FeatureFormats.scala`:
-```Scala
-def writeFeatureJson[D: JsonWriter](obj: Feature[D]): JsValue = {
-  JsObject(
-    "type" -> JsString("Feature"),
-    "geometry" -> GeometryFormat.write(obj.geom),
-    "properties" -> obj.data.toJson
-  )
-}
-def readFeatureJson[D: JsonReader, G <: Geometry: JsonReader, F <: Feature[D]](value: JsValue)(create : (G, D) => F): F = {
-  value.asJsObject.getFields("type", "geometry", "properties") match {
-    case Seq(JsString("Feature"), geom, data) =>
-      val g = geom.convertTo[G]
-      val d = data.convertTo[D]
-      create(g,d)
-    case _ => throw new DeserializationException("Feature expected")
-  }
-}
+Both the geometry type and the associated data are represented using type parameters, so Feature supports any combination of geometry and data while allowing retention of the specific type information.
+Additionally, features are *covariant* in both the geometry and data type, so the subtyping relationships of features follow the subtyping relationships of those type parameters.
+
+GeoTrellis adds *type aliases* for each concrete Geometry type that a Feature might have. For example, `Feature[Point, Weather]` can also be written as `PointFeature[Weather]`. Because this is a type alias the two are treated as exactly the same type by the compiler.
+
+GeoTrellis provides JSON encoding and decoding facilities based on the spray-json library.
+If instances of the JsonWriter and JsonReader typeclasses from spray-json are available for your datatype, you can serialize and deserialize features easily.
+Spray-json provides simple tools for implementing JsonWriter and JsonReader for case classes:
+
+```scala
+import geotrellis.vector._
+import geotrellis.vector.io.json._
+import spray.json._
+import spray.json.DefaultJsonProtocol._
+
+case class Weather(temperature: Double, precipitation: Double, humidity: Double)
+
+implicit val weatherFormat = jsonFormat3(Weather)
+val report = Feature(Point(39.958,-75.160), Weather(50.7, 0, 61))
+report.toGeoJson
 ```
-Right away, `D`'s purpose is clear: any `D` which comes with the tools necessary for json serialization and deserialization will suffice. In effect, `data` corresponds to the "properties" member of the geojson spec's Feature object.
-If you can provide the serialization tools (almost certainly implicit conversions between some case class and [spray json](https://github.com/spray/spray-json)), the `Feature` object in `geotrellis.vector` does the heavy lifting of embedding your (thus serializable) data into the larger structure which includes a geometry. There's even support for geojson IDs: the "ID" member of a geojson Feature is represented by the keys of a `Map` from `String` to `Feature[D]`. Data in both the ID and non-ID variants of geojson Feature formats is easily transformed.
+
+This should produce the GeoJSON representation for the feature. In GeoJson, the data field becomes the `properties` member of the feature.
+```
+{"type":"Feature","geometry":{"type":"Point","coordinates":[39.958,-75.16]},"properties":{"temperature":50.7,"precipitation":0.0,"humidity":61.0}}
+```
 
 ##GeoTrellis Extents
 
