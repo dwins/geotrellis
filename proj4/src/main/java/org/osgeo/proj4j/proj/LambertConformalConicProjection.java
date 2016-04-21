@@ -31,9 +31,6 @@ public class LambertConformalConicProjection extends ConicProjection {
 		minLatitude = Math.toRadians(0);
 		maxLatitude = Math.toRadians(80.0);
 		projectionLatitude = ProjectionMath.QUARTERPI;
-		projectionLatitude1 = 0;
-		projectionLatitude2 = 0;
-		initialize();
 	}
 	
 	/**
@@ -139,6 +136,13 @@ public class LambertConformalConicProjection extends ConicProjection {
 	public String toString() {
 		return "Lambert Conformal Conic";
 	}
+
+    @Override
+    public void applyDefaults() {
+        super.applyDefaults();
+        projectionLatitude1 = Math.toRadians(33.0);
+        projectionLatitude2 = Math.toRadians(45.0);
+    }
 
 }
 

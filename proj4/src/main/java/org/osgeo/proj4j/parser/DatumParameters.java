@@ -46,9 +46,9 @@ public class DatumParameters
   {
     if (datum != null)
       return datum;
-    // if no ellipsoid was specified, return WGS84 as the default
+    // if no ellipsoid was specified, return no ellipsoid
     if (ellipsoid == null && ! isDefinedExplicitly()) {
-      return Datum.WGS84;
+      return null; // Datum.WGS84;
     }
     // Check for WGS84 datum parameters
     if (Ellipsoid.WGS84.equals(ellipsoid) && grids == null && (datumTransform == null || isIdentity(datumTransform)))

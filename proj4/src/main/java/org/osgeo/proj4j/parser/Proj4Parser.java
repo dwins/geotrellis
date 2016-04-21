@@ -58,7 +58,12 @@ public class Proj4Parser
        throw new InvalidValueException( "Unknown projection: "+s );
    }
 
-   projection.setEllipsoid(ellipsoid);
+   s = (String) params.get(Proj4Keyword.no_defs);
+   if (s == null) {
+       projection.applyDefaults();
+   }
+
+   if (ellipsoid != null) projection.setEllipsoid(ellipsoid);
    
    //TODO: better error handling for things like bad number syntax.  
    // Should be able to report the original param string in the error message

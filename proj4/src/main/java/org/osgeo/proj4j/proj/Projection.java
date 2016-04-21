@@ -804,4 +804,9 @@ public abstract class Projection implements Cloneable, java.io.Serializable {
     public Boolean isGeographic() {
         return false;
     }
+
+    /** Apply projection-specific default parameters */
+    public void applyDefaults() {
+        setEllipsoid(Ellipsoid.WGS84);
+    }
 }

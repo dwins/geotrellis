@@ -27,7 +27,7 @@ public class LagrangeProjection extends Projection {
 
 	// Parameters
 	private double hrw;
-	private double rw = 1.4;
+	private double rw;
 	private double a1;
 	private double phi1;
 
@@ -83,5 +83,11 @@ public class LagrangeProjection extends Projection {
 	public String toString() {
 		return "Lagrange";
 	}
+
+    @Override
+    public void applyDefaults() {
+        super.applyDefaults();
+        this.rw = 2;
+    }
 
 }
